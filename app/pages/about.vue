@@ -1,0 +1,37 @@
+<script setup lang="ts">
+import { GAME_FACTS } from '~/content/game-facts'
+import { SITE_OWNER, ownerInfoReady, contactInfoReady } from '~~/shared/site-owner'
+useSiteSeo('/about')
+</script>
+<template>
+<div class="site"><a class="skip-link" href="#about">Skip to about</a><SiteHeader />
+<main id="about" class="guide content-width"><header class="guide-heading"><p class="eyebrow">The game behind the name</p><h1>About RAID OPS</h1><p class="lead">A military run and gun game built around movement, weapon progression and battlefield machinery, played one mission at a time in a desktop browser.</p></header>
+<aside class="version-card" aria-label="Current game version"><span>Game version <strong>{{ GAME_FACTS.version }}</strong></span><span>{{ GAME_FACTS.missions }} missions · {{ GAME_FACTS.weapons }} weapons · {{ GAME_FACTS.operatives }} operatives</span></aside>
+<section v-if="ownerInfoReady()" class="operator-card" aria-label="Developer and operator"><p>Developer: {{ SITE_OWNER.displayName }} · Operator: {{ SITE_OWNER.operatorName }}</p><NuxtLink v-if="contactInfoReady()" to="/contact">Contact RAID OPS</NuxtLink></section>
+<article class="prose" data-about-content>
+<h2>A single game with two campaigns</h2>
+<p>RAID OPS is the name of the game and this website. The address runandgun.games describes its genre: a side-scrolling action game where movement and shooting happen together. The site is dedicated to this one game. You can play from the homepage, read the controls, and return to the same browser to use the equipment you have earned.</p>
+<p>The military setting connects industrial docks, factories, elevated routes and desert outposts. Each mission presents a route to cross, objectives to complete and enemies that make you reconsider where to stand. A quiet section may give you room to inspect equipment. A defended crossing asks you to move, change your weapon or reach another firing position before pushing onward.</p>
+<h2>What the current game includes</h2>
+<p>The current version contains seven playable missions across two campaigns. Grayhaven has six connected missions, starting at the harbor and following the missing squad's trail through the industrial front. Sandstorm offers one desert operation on the Red Sand Frontier. The campaigns share the weapon progression system, while their mission selection and campaign records remain separate.</p>
+<p>Some menus mention possible future Sandstorm operations. Those names describe plans, not additional playable missions. The totals on this site refer to content that is present in the current game. A planned location is not counted as a finished stage, and the presence of a name in a campaign description does not mean that mission can be selected.</p>
+<h2>Movement is part of the fight</h2>
+<p>The basic controls are deliberately short: A and D move, J fires, and Space jumps. Further controls become useful as the route changes. W aims upward, S crouches, and E operates nearby equipment. A solid beam can catch your bullets even when a target is visible beyond it. Moving to a different height can be more effective than continuing to fire from the same position.</p>
+<p>Falcon and Silver Fox offer different ways to handle that movement. Falcon's tactical dash moves him in his facing direction with brief damage protection. Silver Fox can make an additional leap in the air. Their abilities have cooldowns, and the chosen operative stays fixed during a mission attempt. This is a choice of play style, not a cooperative mode with two characters fighting at once.</p>
+<h2>An arsenal that carries forward</h2>
+<p>You begin with an assault rifle and gain additional weapons by capturing defended armories. The full arsenal contains the assault rifle, shotgun, piercing rifle, machine gun, rocket launcher and EM cannon. Each has a role rather than simply replacing the previous gun. Close-range spread, sustained fire, armor penetration and explosions give different answers to the enemies and obstacles along the route.</p>
+<p>Research is shared across eight arsenal levels. A weapon captured later benefits from the research you already have, so changing equipment does not send you back to a separate starting level. Q cycles through unlocked weapons, and keys 1–6 select one directly. The game explains new equipment at mission results. You can keep earned weapons and research after a retry or when starting a later mission.</p>
+<h2>Equipment belongs to the battlefield</h2>
+<p>The environments contain working facilities as well as scenery. Depending on the mission, you may operate a crane, ride a freight lift, board an available armored vehicle or use a fixed machine gun. These interactions have practical limits. A gun can overheat, a vehicle cannot solve every gap, and a suspended load needs a supported landing to become a usable route.</p>
+<p>Other facilities change the conditions of a fight. A radar installation can support nearby defenses. A control terminal may require holding position long enough to complete an operation. In Sandstorm, quicksand affects footing and some water-tower supports can be destroyed to change a crossing. Read the prompt at the equipment itself; sharing an interaction key does not make every facility behave alike.</p>
+<h2>Browser play and local progress</h2>
+<p>The game runs in the browser without a separate game installer or a required account. It uses a keyboard and is intended for a desktop or laptop. The website does not currently provide touch controls or multiplayer. The current standalone website and game interface are in English.</p>
+<p>Permanent progress is kept in local storage for this site in the browser you use. That includes earned weapons, research, mission records and preferences. It is not a cloud account. Another browser, device or domain has its own records. Clearing this site's browser data removes the local save.</p>
+<p>Checkpoints serve a different purpose from permanent progress. They support retries during the current mission session. A regular attempt also stores the current battlefield locally, including position, health, enemies, machinery and retry checkpoint. Start game offers to continue that save or choose a new attempt; Quick start enters the first mission without replacing the saved battlefield. The pause menu lets you leave an attempt and return to mission selection while keeping the permanent records already earned.</p>
+<h2>Learning the route at your own pace</h2>
+<p>You can inspect the controls and weapon roles before deploying. During a mission, short prompts introduce movement and nearby equipment. Settings include aim assist, automatic fire, sound, music and reduced motion. A browser may require an initial click before allowing audio; you can also leave music off. These options let you adjust the presentation without changing the game's single-player campaign structure.</p>
+<p>The beginner guide explains the controls, operative abilities and retry behavior in more detail. Use it if you are unsure whether a command applies to ordinary movement, a ladder, a rope or a mounted weapon. When returning to play, the campaign screen shows which operations are available. Choose a mission, read its briefing and learn the first defended section before rushing deeper.</p>
+</article>
+<div class="actions"><NuxtLink to="/" class="button">Play RAID OPS</NuxtLink><NuxtLink to="/how-to-play" class="text-link">Read the beginner guide</NuxtLink></div>
+</main><SiteFooter /></div>
+</template>

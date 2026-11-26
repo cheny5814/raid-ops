@@ -1,0 +1,19 @@
+Iron Front display fonts
+
+Bungee — Copyright 2023 The Bungee Project Authors
+Source: https://github.com/google/fonts/tree/main/ofl/bungee
+License: SIL Open Font License 1.1; see Bungee-OFL.txt
+
+ZCOOL KuaiLe — Copyright 2018 The ZCOOL KuaiLe Project Authors
+Source: https://github.com/google/fonts/tree/main/ofl/zcoolkuaile
+License: SIL Open Font License 1.1; see ZCOOLKuaiLe-OFL.txt
+
+Russo One — Copyright (c) 2011-2012, Jovanny Lemonad
+Source: https://github.com/google/fonts/tree/main/ofl/russoone
+License: SIL Open Font License 1.1; see RussoOne-OFL.txt
+
+Chakra Petch — Copyright 2018 The Chakra Petch Project Authors
+Source: https://github.com/google/fonts/tree/main/ofl/chakrapetch
+License: SIL Open Font License 1.1; see ChakraPetch-OFL.txt
+
+Original, unmodified font binaries are served locally.

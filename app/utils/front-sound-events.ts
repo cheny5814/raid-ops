@@ -1,0 +1,3 @@
+export type SoundCue = 'sandHit' | 'stoneHit' | 'woodHit' | 'trackMove' | 'turretTurn' | 'reload' | 'armorBreak' | 'weakHit' | 'supportFire' | 'hit' | 'metalHit' | 'shield' | 'hurt' | 'armorHit' | 'enemyDown' | 'explosion' | 'barrelBoom' | 'tankBoom' | 'ropeGrab' | 'ropeRelease' | 'ladderGrab' | 'ladderStep' | 'jump' | 'land' | 'pickup' | 'checkpoint' | 'objective' | 'equip' | 'ui' | 'victory' | 'death'
+export type SoundEvent = { kind: SoundCue, x: number }
+export function emitSound(run: { soundEvents: SoundEvent[] }, kind: SoundCue, x: number) { run.soundEvents ??= []; if (run.soundEvents.length < 48) run.soundEvents.push({ kind, x }) }
