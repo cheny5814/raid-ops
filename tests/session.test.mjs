@@ -61,7 +61,7 @@ test('快速开始首关：无旧存档时启用保存，有旧存档时不覆�
   const source=await readFile(new URL('../app/components/game/RaidOpsGame.vue',import.meta.url),'utf8')
   const fn=source.slice(source.indexOf('function quickStart()'),source.indexOf('function titleStart()'))
   const calls=[]
-  const box=vm.createContext({mode:{value:'ready'},panel:{value:null},savedGame:{value:null},radio:{value:null},chooseCampaign:id=>calls.push(id),select:id=>calls.push(id),start:save=>calls.push(save)})
+  const box=vm.createContext({track(){},mode:{value:'ready'},panel:{value:null},savedGame:{value:null},radio:{value:null},chooseCampaign:id=>calls.push(id),select:id=>calls.push(id),start:save=>calls.push(save)})
   vm.runInContext(fn,box);vm.runInContext('quickStart()',box)
   assert.deepEqual(calls,['grayhaven',0,true])
   calls.length=0;box.savedGame.value={campaign:'sandstorm',levelId:0}

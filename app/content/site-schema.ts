@@ -1,4 +1,4 @@
-import { SITE, canonicalUrl, pageSeo } from '../../shared/site.ts'
+import { SITE, canonicalUrl, pageSeo } from '#shared/site'
 import { GAME_FACTS } from './game-facts.ts'
 export function gameSiteSchema() {
   const home = canonicalUrl('/')

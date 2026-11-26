@@ -1,4 +1,9 @@
 <script setup lang="ts">
+import { track } from '../../utils/track'
+import { createGameStats } from '../../utils/game-stats'
+const gameStats = createGameStats(track)
+let restoredPending = false
+const beginGameStats = (kind: 'start' | 'continue' | 'retry') => gameStats.begin(campaignId.value, level.value.id, kind)
 import { encodeSession, decodeSession, type SavedSession } from '../../utils/front-session'
 import {mechanicalSources} from '../../utils/front-combat-motion'
 import {warmDestructionArt} from '../../utils/front-impact.ts'
@@ -115,10 +120,11 @@ function clearSession() {
 }
 function quickStart() {
   if (mode.value !== 'ready' || panel.value) return
-  chooseCampaign('grayhaven'); select(0); start(!savedGame.value); radio.value = null
+  track('click_quick_start'); chooseCampaign('grayhaven'); select(0); start(!savedGame.value); radio.value = null
 }
 function titleStart() {
   if (mode.value !== 'ready' || panel.value) return
+  track('click_start_game')
   if (savedGame.value) openPanel('continue')
   else showCampaigns()
 }
@@ -137,7 +143,7 @@ function continueGame() {
   panel.value = null; settlement.value = null; transit.value = null; arrival = null; resultPreview.value = false; previewing.value = false
   equipmentOpen.value = false; radio.value = null; weaponReveals.value = []; upgradeReveal.value = null
   saveSlotActive = true; lastSessionAt = run.time; cameraView = undefined
-  clearInput(); previous = 0; accumulator = 0; reason.value = ''; mode.value = 'paused'; sync(); rememberMission()
+  clearInput(); previous = 0; accumulator = 0; reason.value = ''; mode.value = 'paused'; restoredPending = true; sync(); rememberMission()
   message('Saved game restored. Resume when you are ready.')
   nextTick(() => { resize(); pauseCard.value?.querySelector('button')?.focus() })
 }
@@ -204,8 +210,8 @@ function uiClickSound(event: MouseEvent) { if ((event.target as HTMLElement).clo
 function focusPlayfield(event: PointerEvent) { const target = event.target as HTMLElement; if (!target.closest('button, a, input, select, textarea')) focusGame() }
 function focusGame() { if (mode.value === 'playing') arena.value?.focus({ preventScroll: true }) }
 function rememberMission(){lastCampaign.value=campaignId.value;lastMission.value=level.value.id;try{localStorage.setItem(storageKey.value+':last-campaign',campaignId.value);localStorage.setItem(storageKey.value+':last-mission',String(lastMission.value))}catch{storageAvailable.value=false}}
-function start(saveSlot = true) { saveSlotActive = saveSlot !== false; lastSessionAt = 0; rememberMission();upgradeReveal.value=null;upgradeRemaining.value=0;weaponReveals.value=[];revealRemaining.value=0;cameraView=undefined; musicPreviewUntil = 0; equipmentOpen.value = false; panel.value = null; settlement.value = null; resultPreview.value = false; victoryTime.value = 0; victoryPaused.value = false; transit.value = null; previewing.value = false; arrival = null; clearInput(); run = createRun(level.value, armoryFor(progress.value), progress.value.missions, progress.value.weaponXp,selectedOperative.value); accumulator = 0; previous = 0; reason.value = ''; notice.value = ''; mode.value = 'playing'; prepareChapter(); sync(); storeSession(); nextTick(focusGame); unlockAudio() }
-function retry() { upgradeReveal.value=null;upgradeRemaining.value=0;cameraView=undefined; equipmentOpen.value = false; clearInput(); run = respawn({...run,operative:selectedOperative.value}, level.value); accumulator = 0; previous = 0; reason.value = ''; mode.value = 'playing'; radio.value = null; sync(); storeSession(); nextTick(focusGame); message(run.saved ? tr('Checkpoint restored. Health refilled.', '从补给点重新突围，体力已恢复') : tr('Back in action. Hold J to fire.', '重新出发，按住 J 连续开火')) }
+function start(saveSlot = true) { restoredPending = false; saveSlotActive = saveSlot !== false; lastSessionAt = 0; rememberMission();upgradeReveal.value=null;upgradeRemaining.value=0;weaponReveals.value=[];revealRemaining.value=0;cameraView=undefined; musicPreviewUntil = 0; equipmentOpen.value = false; panel.value = null; settlement.value = null; resultPreview.value = false; victoryTime.value = 0; victoryPaused.value = false; transit.value = null; previewing.value = false; arrival = null; clearInput(); run = createRun(level.value, armoryFor(progress.value), progress.value.missions, progress.value.weaponXp,selectedOperative.value); accumulator = 0; previous = 0; reason.value = ''; notice.value = ''; mode.value = 'playing'; beginGameStats('start'); prepareChapter(); sync(); storeSession(); nextTick(focusGame); unlockAudio() }
+function retry() { upgradeReveal.value=null;upgradeRemaining.value=0;cameraView=undefined; equipmentOpen.value = false; clearInput(); run = respawn({...run,operative:selectedOperative.value}, level.value); accumulator = 0; previous = 0; reason.value = ''; mode.value = 'playing'; restoredPending = false; beginGameStats('retry'); radio.value = null; sync(); storeSession(); nextTick(focusGame); message(run.saved ? tr('Checkpoint restored. Health refilled.', '从补给点重新突围，体力已恢复') : tr('Back in action. Hold J to fire.', '重新出发，按住 J 连续开火')) }
 function chooseCampaign(id:'grayhaven'|'sandstorm'){if(mode.value!=='ready')return;campaignId.value=id;select(isDesert.value?0:progress.value.current)}
 function select(index: number) { cameraView=undefined; if (mode.value === 'transition' || mode.value === 'victory' || index > campaignUnlocked.value) return; clearInput(); settlement.value = null; resultPreview.value = false; if(!isDesert.value)progress.value.current = index; run = createRun(level.value, armoryFor(progress.value), progress.value.missions, progress.value.weaponXp,selectedOperative.value); mode.value = 'ready'; radio.value = null; menuView.value = 'missions'; notice.value = ''; sync(); save() }
 function beginVictory(preview = false) {
@@ -215,7 +221,7 @@ function beginVictory(preview = false) {
   const result = settleRun(level.value, source, record)
   if (!result) return
   settlement.value = result; resultPreview.value = preview; victoryTime.value = 0; victoryPaused.value = false
-  if (!preview) { clearSession(); if(isDesert.value){progress.value=recordMissions(progress.value,run);if(!desertRecord.value||run.score>desertRecord.value.score||run.score===desertRecord.value.score&&run.time<desertRecord.value.time)desertRecord.value={score:run.score,time:run.time,kills:run.kills};try{localStorage.setItem(storageKey.value+':sandstorm',JSON.stringify(desertRecord.value))}catch{storageAvailable.value=false}}else progress.value = complete(progress.value, run); save() }
+  if (!preview) { gameStats.finish('mission_complete'); clearSession(); if(isDesert.value){progress.value=recordMissions(progress.value,run);if(!desertRecord.value||run.score>desertRecord.value.score||run.score===desertRecord.value.score&&run.time<desertRecord.value.time)desertRecord.value={score:run.score,time:run.time,kills:run.kills};try{localStorage.setItem(storageKey.value+':sandstorm',JSON.stringify(desertRecord.value))}catch{storageAvailable.value=false}}else progress.value = complete(progress.value, run); save() }
   soundBank?.stopTraversal?.(); soundBank?.cue?.('victory'); mode.value = 'victory'; clearInput(); notice.value = ''; previous = 0; accumulator = 0; arena.value?.focus({ preventScroll: true })
 }
 function showSettlement() {
@@ -240,12 +246,12 @@ function finishTransition() { cameraView=undefined;
   if (!state || mode.value !== 'transition') return
   if (previewing.value) { mode.value = previewReturnMode; transit.value = null; previewing.value = false; arrival = null; previous = 0; return }
   const nextRun = arriveRun(state, FRONT_LEVELS[state.to]!)
-  progress.value.current = state.to;rememberMission();upgradeReveal.value=null;upgradeRemaining.value=0;run = nextRun; transit.value = null; arrival = null; mode.value = 'playing'
+  progress.value.current = state.to;rememberMission();upgradeReveal.value=null;upgradeRemaining.value=0;run = nextRun; transit.value = null; arrival = null; mode.value = 'playing'; beginGameStats('start')
   clearInput(); previous = 0; accumulator = 0; prepareChapter(); sync(); save(); storeSession(); focusGame(); message(tr('New sector. Gear retained. Health and grenades replenished.', '进入新战区，武器与护甲已携带，体力和手雷已补充'))
 }
 function next() { if (resultPreview.value) { returnToDungeon(); return }; if (isDesert.value || progress.value.current === FRONT_LEVELS.length - 1) { select(0); return }; beginTransition() }
 function pause() { soundBank?.stopTraversal?.(); if (mode.value === 'victory') { victoryPaused.value = true; clearInput(); return }; if (mode.value === 'transition' && transit.value) { transit.value.paused = true; clearInput(); return }; if (mode.value === 'playing') { storeSession(); clearInput(); mode.value = 'paused'; updateMusic(); nextTick(() => pauseCard.value?.querySelector('button')?.focus()) } }
-function resume() { musicPreviewUntil = 0; panel.value = null; if (mode.value === 'victory') { victoryPaused.value = false; previous = 0; nextTick(() => arena.value?.focus({ preventScroll: true })); return }; if (mode.value === 'transition' && transit.value) { transit.value.paused = false; previous = 0; nextTick(() => arena.value?.focus({ preventScroll: true })); return }; clearInput(); previous = 0; accumulator = 0; mode.value = 'playing'; unlockAudio(); nextTick(focusGame) }
+function resume() { musicPreviewUntil = 0; panel.value = null; if (mode.value === 'victory') { victoryPaused.value = false; previous = 0; nextTick(() => arena.value?.focus({ preventScroll: true })); return }; if (mode.value === 'transition' && transit.value) { transit.value.paused = false; previous = 0; nextTick(() => arena.value?.focus({ preventScroll: true })); return }; clearInput(); previous = 0; accumulator = 0; mode.value = 'playing'; if (restoredPending) { restoredPending = false; beginGameStats('continue') }; unlockAudio(); nextTick(focusGame) }
 function pageForeground() { return typeof document !== 'undefined' && !document.hidden && (typeof document.hasFocus !== 'function' || document.hasFocus()) }
 function silenceMusic(el = musicPlayer.value) { if (el) { el.muted = true; el.volume = 0; el.pause() } }
 function backgroundAudio() { pageActive = false; musicGeneration++; silenceMusic(); pause(); soundBank?.suspend?.().catch(() => {}) }
@@ -292,13 +298,13 @@ function closePanel() { panel.value = null; nextTick(() => { if (panelReturnFocu
 function showMissions() { unlockAudio(); menuFeedback.value = ''; if (mode.value !== 'ready') { openPanel('leave'); return }; menuView.value = 'missions'; nextTick(() => arena.value?.focus({ preventScroll: true })) }
 function showCampaigns() { if (mode.value !== 'ready') return; clearInput(); menuView.value = 'campaigns'; nextTick(() => arena.value?.focus({ preventScroll: true })) }
 function showCampaignStory(id:'grayhaven'|'sandstorm') { if (mode.value !== 'ready') return; chooseCampaign(id); showCampaigns(); openPanel('story') }
-function chooseOperative(id:OperativeId){if(!operativeCanChange.value)return;selectedOperative.value=readOperative(id);if(mode.value==='ready')run.operative=selectedOperative.value;persistPreferences();sync()}
+function chooseOperative(id:OperativeId){if(!operativeCanChange.value)return;const changed=selectedOperative.value!==readOperative(id);selectedOperative.value=readOperative(id);if(changed)track(selectedOperative.value==='fox'?'operative_silver_fox':'operative_falcon');if(mode.value==='ready')run.operative=selectedOperative.value;persistPreferences();sync()}
 function prepareDeployment(){if(mode.value!=='ready'||panel.value)return;start()}
 function cycleOperative(direction:number){if(!operativeCanChange.value)return;operativeSlide.value=direction;const next=(operativeIndex.value+direction+OPERATIVE_ORDER.length)%OPERATIVE_ORDER.length;chooseOperative(OPERATIVE_ORDER[next]!)}
 function confirmOperative(){if(mode.value==='ready'){closePanel()}else if(mode.value==='dead'){panel.value=null;retry()}}
 function activateSkill(){if(mode.value!=='playing'||!canUseOperativeSkill(run))return;skill=true;focusGame()}
 function showTitle() { select(level.value.id); menuView.value = 'title'; nextTick(() => arena.value?.focus({ preventScroll: true })) }
-async function confirmMenuAction() { const action = panel.value; panel.value = null; if (action === 'restart') start(saveSlotActive); else if (action === 'leave' || action === 'quit') { storeSession(); select(level.value.id); menuView.value = 'missions'; nextTick(() => arena.value?.focus({ preventScroll: true })) } }
+async function confirmMenuAction() { const action = panel.value; panel.value = null; if (action === 'restart') start(saveSlotActive); else if (action === 'leave' || action === 'quit') { gameStats.finish('game_exit'); storeSession(); select(level.value.id); menuView.value = 'missions'; nextTick(() => arena.value?.focus({ preventScroll: true })) } }
 function windowKeydown(event: KeyboardEvent) {
   const target = event.target as Node | null
   if (gameScreen.value?.contains(target) || target === document.body || target === document.documentElement) keydown(event)
@@ -440,6 +446,7 @@ function animate(time: number) {
       const oldStoryCount = run.storyCompleted.length, oldCheckpoint = run.checkpoint, oldClaims = run.claimedMissions.length, oldArsenal = run.arsenal.length, previousShot = run.gunfire?.serial ?? 0
       const action=input(),beforeLesson={x:run.x,weapon:run.weapon,grenades:run.grenades,skillCooldown:run.skillCooldown,rope:run.rope,zipline:run.zipline,ladder:run.ladder,mountedGun:run.mountedGun,tacticalControl:run.tacticalControl,stats:{...run.stats},fieldSwitches:[...run.fieldSwitches]},previousWeapons=[...run.arsenal]
       step(run, level.value, action, 1 / 120);
+      gameStats.tick(1 / 120)
       const learned=observeLessons(tutorial.value,beforeLesson,run,action);if(learned!==tutorial.value){tutorial.value=learned;saveTutorial()}
       if(run.arsenal.length>oldArsenal){for(const item of run.arsenal)if(!previousWeapons.includes(item)&&!weaponReveals.value.includes(item))weaponReveals.value.push(item);if(revealRemaining.value<=0)revealRemaining.value=8}
       jump = false; grenade = false; interact = false; skill=false; accumulator -= 1 / 120
@@ -469,7 +476,7 @@ function animate(time: number) {
         if (task && growth.value.level === previousRank && run.arsenal.length === oldArsenal) message(tr('Armory secured. +150 points.', '军械据点完成，战术得分 +150'))
       }
       else if (run.checkpoint > oldCheckpoint) message(tr('Checkpoint saved · supplies restored', '检查点已保存 · 补给已恢复'))
-      if (run.status !== 'playing') { soundBank?.stopTraversal?.(); mode.value = run.status; reason.value = run.reason; clearInput(); if (run.status === 'won') beginVictory(); else nextTick(() => pauseCard.value?.querySelector('button')?.focus()); break }
+      if (run.status !== 'playing') { if (run.status === 'dead') gameStats.finish('game_fail'); soundBank?.stopTraversal?.(); mode.value = run.status; reason.value = run.reason; clearInput(); if (run.status === 'won') beginVictory(); else nextTick(() => pauseCard.value?.querySelector('button')?.focus()); break }
     }
     // 镜头与本帧物理更新后的角色位置对齐，避免跳跃/低帧率时落后一帧。
     if (mode.value === 'playing') cameraView = battleView(level.value, run, width, cameraView, dt)
@@ -517,7 +524,7 @@ onMounted(() => {
   sceneObserver = new IntersectionObserver(entries => { const entry = entries[entries.length - 1]; if (entry) setSceneVisible(entry.isIntersecting) }); if (gameScreen.value) sceneObserver.observe(gameScreen.value)
   window.addEventListener('resize', resize); window.addEventListener('keydown', windowKeydown); window.addEventListener('keyup', keyup); window.addEventListener('blur', backgroundAudio); window.addEventListener('focus', foregroundAudio); document.addEventListener('visibilitychange', visibility); window.addEventListener('pagehide', backgroundAudio); window.addEventListener('pageshow', foregroundAudio); pageActive = pageForeground(); audioUnlocked = true; updateMusic(); frame = requestAnimationFrame(animate)
 })
-onBeforeUnmount(() => { storeSession(); if (immersive.value) document.documentElement.style.overflow = pageOverflow; cancelAnimationFrame(frame); pageActive = false; audioUnlocked = false; musicGeneration++; silenceMusic(); document.removeEventListener('fullscreenchange', fullscreenChange); observer?.disconnect(); sceneObserver?.disconnect(); clearInput(); clearTimeout(noticeTimer); musicPlayer.value?.pause(); soundBank?.dispose().catch(() => {}); window.removeEventListener('resize', resize); window.removeEventListener('keydown', windowKeydown); window.removeEventListener('keyup', keyup); window.removeEventListener('blur', backgroundAudio); window.removeEventListener('focus', foregroundAudio); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', backgroundAudio); window.removeEventListener('pageshow', foregroundAudio) })
+onBeforeUnmount(() => { gameStats.finish('game_exit'); storeSession(); if (immersive.value) document.documentElement.style.overflow = pageOverflow; cancelAnimationFrame(frame); pageActive = false; audioUnlocked = false; musicGeneration++; silenceMusic(); document.removeEventListener('fullscreenchange', fullscreenChange); observer?.disconnect(); sceneObserver?.disconnect(); clearInput(); clearTimeout(noticeTimer); musicPlayer.value?.pause(); soundBank?.dispose().catch(() => {}); window.removeEventListener('resize', resize); window.removeEventListener('keydown', windowKeydown); window.removeEventListener('keyup', keyup); window.removeEventListener('blur', backgroundAudio); window.removeEventListener('focus', foregroundAudio); document.removeEventListener('visibilitychange', visibility); window.removeEventListener('pagehide', backgroundAudio); window.removeEventListener('pageshow', foregroundAudio) })
 </script>
 
 <template>

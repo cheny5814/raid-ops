@@ -5,7 +5,10 @@ import { parse, compileScript, compileTemplate } from '@vue/compiler-sfc'
 import { SITE, PUBLIC_PAGES, indexedPaths, canonicalUrl, pageSeo, canonicalPagePath } from '../shared/site.ts'
 import { SITE_OWNER, ownerInfoReady, contactInfoReady } from '../shared/site-owner.ts'
 import { GAME_FACTS } from '../app/content/game-facts.ts'
-import { gameSiteSchema } from '../app/content/site-schema.ts'
+import { build } from 'esbuild'
+import { fileURLToPath } from 'node:url'
+const schemaBundle = await build({ entryPoints: [fileURLToPath(new URL('../app/content/site-schema.ts', import.meta.url))], bundle: true, write: false, format: 'esm', platform: 'node', alias: { '#shared/site': fileURLToPath(new URL('../shared/site.ts', import.meta.url)) } })
+const { gameSiteSchema } = await import('data:text/javascript;base64,' + Buffer.from(schemaBundle.outputFiles[0].text).toString('base64'))
 const read = path => readFile(new URL('../' + path, import.meta.url), 'utf8')
 test('导航、SEO与站点地图共用已启用的页面，按照已确认署名及联系信息分别启用条款与联系入口', async () => {
   assert.equal(new Set(PUBLIC_PAGES.map(p => p.path)).size, PUBLIC_PAGES.length)

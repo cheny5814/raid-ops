@@ -34,12 +34,12 @@
 ## 后续正式发布
 
 1. 核对整条路线与 Boss 通关、暂停返回和存档。
-2. 核对素材公开使用授权，补充运营联系信息及实际采用的统计方案；目前未接入统计或广告。
+2. 核对素材公开使用授权；第一方统计的后台白名单和游戏域名 /e 转发须随发布启用，目前未接入广告。
 3. 将域名解析到现有服务器，配置独立目录和 HTTPS。
 4. 授权后预渲染正式产物，核对 canonical、robots、sitemap 和静态资源，再发布。
 5. 确认独立站可玩后，再把后台入口改为新域名跳转。
 
-本项目尚未绑定域名或部署到生产。Git 仓库：https://github.com/cheny5814/raid-ops 。
+正式站已于2026-11-26部署到 https://runandgun.games 。Git 仓库：https://github.com/cheny5814/raid-ops 。下方早期批次记录保留当时的验证边界。
 
 ## Desktop homepage update
 
@@ -106,3 +106,25 @@ Screenshot sources: existing game-rendered frames `/tmp/raid-fullscreen-0.png` a
 - 宣传演示改为独立真实战场：两名步兵、两架无人机、坦克按当前镜头右侧的屏外位置依次进入。角色持续向前跑，镜头跟随，近处甲板后移，远景固定。
 - 复用真实AI、弹道、命中、受击、爆炸及角色动作，自动换机枪/火箭和跳跃躲弹；不使用站定等待的脚本。演示与玩家战场及存档隔离，无重复战斗音效。
 - 10项定向检查通过，覆盖全程跑动、屏外入场、移动交火、击败5个目标及状态隔离；浏览器目检演出与爆炸正常，无控制台错误。仅本地修改，未构建或发布。
+
+## 第一方使用统计
+
+游戏通过同源 `POST /e` 接入后台「流量统计」中的 `runandgun.games`，只在正式域名且非开发环境上报。本地预览不写正式数据；页面编号仅保留在内存，不增加 cookie 或持久访客标识，不上传完整存档。
+
+- 页面：PV、来源域名、来源渠道、可见满5秒、首次输入；复用后台设备/国家/访客分类。
+- 入口：`click_start_game`、`click_quick_start`，与实际进入分开统计。
+- 游戏：`game_start_战役_关号`、`game_continue_战役_关号`、`game_retry_战役_关号`、`game_fail_战役_关号`、`game_exit_战役_关号`、`mission_complete_战役_关号`。战役标识为 grayhaven/sandstorm，关号01起。
+- 继续存档在按 Resume 后才统计实际进入；普通暂停恢复不会重复计入。
+- `play_60s`、`play_300s` 按本次页面打开期间的真实模拟时间累计，每档只报一次；暂停、隐藏、首页演出不累计，读入的存档时长不作为已玩时长。
+- 角色切换：`operative_falcon`、`operative_silver_fox`；不报姓名或账号。
+
+发布时先更新后台的站点白名单和报表配置，再在游戏域名的 HTTPS server 块中加入 `deploy/stats-location.conf`；它会转发至同机后台的3100端口。静态文件本身不能处理 `/e`。采集服务继续使用后台已有数据库和密钥；不要把后台密钥放进前端。检查 Nginx 配置和真实访客IP传递后再重载。正式发布后需核对入口、开局、时长、失败和通关数据在后台的实际入库；本地模拟验证不代表线上已入库。
+
+## 2026-11-26 首次正式发布
+
+- 正式入口为 https://runandgun.games ，HTTP与www统一301到主域名；HTTPS证书已配置自动续期及续期后的Nginx重载。
+- 静态目录 `/var/www/raid-ops/current` 指向版本目录 `/var/www/raid-ops/releases/20261126-initial`。站点配置为 `/etc/nginx/sites-available/raid-ops`，统计转发为 `/etc/nginx/snippets/raid-ops-stats.conf`，模板保存在本仓库 `deploy/`。
+- 正式产物使用 `SITE_INDEXABLE=true npm run generate`。共享配置使用Nuxt的 `#shared` 别名；停用联系页排除预渲染，仍返回404。
+- 五个公开页面、canonical与索引指令、robots、sitemap、www/HTTP/尾斜杠跳转及关键JS/CSS/图片/音乐MIME经线上HTTP核对。浏览器核对了回车开始、部署、移动射击、暂停和刷新恢复存档；没有将这些冒烟检查当作七关浏览器通关。
+- 后台流量统计已发布RAID OPS站点与漏斗。正式浏览器产生的PV、可见满5秒、首次输入、开始入口、实际开局、继续存档事件已只读核对真实入库；1/5分钟与全部任务通关事件的去重由定向模拟验证，未声称本次浏览器已逐一达成。
+- 后台此次仅叠加统计运行时文件，旧产物保存在 `/home/tools/raid-ops-release-20261126/output-before`，原统计源码保存在同目录的 `source-before/`。游戏包SHA-256为 `f71948f4b3f942b1e4a4bb892e3a586387b5d7d0e418594b20411c6cf8af6b79`。
